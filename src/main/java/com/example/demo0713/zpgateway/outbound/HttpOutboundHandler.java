@@ -78,13 +78,21 @@ public class HttpOutboundHandler extends ChannelOutboundHandlerAdapter {
     // 处理方法
     public void handle(final FullHttpRequest fullReq, final ChannelHandlerContext ctx,
                        final HttpRequestFilter filter){
-        // 路由url
-        String routerUrl = this.router.router(backendUrls);
-        String realUrl = backendUrls + routerUrl;
-        // 过滤器  在header中添加字段
-        filter.reqFilter(fullReq, ctx);
-        // 往线程池提交任务
-        executorService.submit(()->fetchGet(fullReq, ctx, realUrl));
+        try {
+            // 路由url
+            String routerUrl = this.router.router(backendUrls);
+            String realUrl = routerUrl + fullReq.uri();
+            // 过滤器  在header中添加字段
+            filter.reqFilter(fullReq, ctx);
+            // 往线程池提交任务
+            Future<?> submit = executorService.submit(() -> fetchGet(fullReq, ctx, realUrl));
+            // 获取结果
+            Object reqRes = submit.get(2000, TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
     }
 
     public void fetchGet(final FullHttpRequest inbound, final ChannelHandlerContext ctx, final String url){

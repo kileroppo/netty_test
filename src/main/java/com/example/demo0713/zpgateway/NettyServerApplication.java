@@ -13,7 +13,7 @@ public class NettyServerApplication {
 
     public static void main(String[] args) {
         String proxyPort = System.getProperty("proxyPort","8888");
-        List<String> proxyServers = Arrays.asList("127.0.0.1:8088/");
+        List<String> proxyServers = Arrays.asList("http://127.0.0.1:8803");
         // 1 获取多个真正的后端请求端口地址
         InboundServer inboundServer = new InboundServer(Integer.parseInt(proxyPort), proxyServers);
         inboundServer.handlerReq();
