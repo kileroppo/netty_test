@@ -3,24 +3,46 @@ package com.example.demo0713.sqltest;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.example.demo0713.sqltest.until.RandomName;
 
 import java.io.*;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.stream.Collectors;
 
 public class TestJdbc {
 
 
-    public static final String mysql_password = "root";
+//    public static final String mysql_password = "root";
     public static final String mysql_name="root";
+    public static final String mysql_password = "1366";
     public static final String mysql_url = "jdbc:mysql://127.0.0.1:3306/world?characterencoding=utf-8&useSSL=false";
+    
     public static Connection conn = null;
+    public static   List<String> nameCollects = null;
+    public static   List<String> birDayCollects = null;
+    private static List<Integer> numbers = new ArrayList<>(10000);
+    public static  Random random = new Random();
 
     {
         try {
 
                 Class.forName("com.mysql.cj.jdbc.Driver");
                 conn = DriverManager.getConnection(mysql_url, mysql_name, mysql_password);
-
+                // 随机生成1000名字
+                nameCollects = RandomName.makehunderName(10000).parallelStream()
+                               .collect(Collectors.toList());
+                // 随机产生10000个生日
+                birDayCollects = RandomName.genrateBirthDay(10000);
+             
+            // 随机生成10000个随机数 存入数组
+                for (int i = 0; i < 10000; i++) {
+                    int tmpNum = random.nextInt(10000);
+                    numbers.add(tmpNum);
+                }
+        
         } catch (SQLException | ClassNotFoundException throwables) {
             throwables.printStackTrace();
         }
@@ -40,29 +62,61 @@ public class TestJdbc {
         String dirname = "D:/student.json";
         long start = System.currentTimeMillis();
         eachdata(dirname);
-        System.out.println("一共话费时间："+ (System.currentTimeMillis() - start));
+        System.out.println("插入100w一共花费时间："+ (System.currentTimeMillis() - start) + "ms");
     }
+    
+    // 读取数据
+    private static void eachdata(String filePath) {
+        String ss = readJsonFile(filePath);
+        
+        JSONObject jobj = JSON.parseObject(ss);
+        JSONArray studs = jobj.getJSONArray("RECORDS");//构建JSONArray数组
+        
+        studs.parallelStream().forEach(jsOBjs->{
+            Student student = JSONObject.parseObject(jsOBjs.toString(), Student.class);
+            testCrud(student,  numbers.get(random.nextInt(10000)));
+        });
+    }
+    
+    //读取json文件
+    public static String readJsonFile(String dirname) {
 
-
-    public static void testCrud(Student  stud)  {
+//        String dirname = "D:/student.json";
+        String jsonStr = "";
+        try {
+            File jsonFile = new File(dirname);
+            FileReader fileReader = new FileReader(jsonFile);
+            Reader reader = new InputStreamReader(new FileInputStream(jsonFile),"utf-8");
+            int ch = 0;
+            StringBuffer sb = new StringBuffer();
+            while ((ch = reader.read()) != -1) {
+                sb.append((char) ch);
+            }
+            fileReader.close();
+            reader.close();
+            jsonStr = sb.toString();
+            return jsonStr;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    
+    
+    // 插入数据
+    public static void testCrud(Student stud, Integer integer)  {
         PreparedStatement statement =null;
         ResultSet result = null;
         try {
-            // 1 加载驱动
-//            Class.forName("com.mysql.cj.jdbc.Driver");
-//            conn = DriverManager.getConnection(mysql_url, mysql_name, mysql_password);
-
-//             conn = getConnection();
-            // 2 获取连接
-
-
-            long id = stud.getId()+1000010;
-            String name = stud.getName();
-            String bird = stud.getBirthday();
+            
+            long id = stud.getId();
+            String name = nameCollects.get( integer);
+            String bird = birDayCollects.get(integer);
             String addr = stud.getAddr();
-            int hiredate = stud.getHiredate();
-            int salary = stud.getSalary();
-            int deptno = stud.getDeptno();
+            int hiredate = stud.getHiredate() + integer;
+            int salary = stud.getSalary() + integer;
+            int deptno = stud.getDeptno() +integer;
 
             // 3  预编译
 //            String sql = "select * from student where name=?";
@@ -114,54 +168,8 @@ public class TestJdbc {
 
     }
 
-    //读取json文件
-    public static String readJsonFile(String dirname) {
 
-//        String dirname = "D:/student.json";
-        String jsonStr = "";
-        try {
-            File jsonFile = new File(dirname);
-            FileReader fileReader = new FileReader(jsonFile);
-            Reader reader = new InputStreamReader(new FileInputStream(jsonFile),"utf-8");
-            int ch = 0;
-            StringBuffer sb = new StringBuffer();
-            while ((ch = reader.read()) != -1) {
-                sb.append((char) ch);
-            }
-            fileReader.close();
-            reader.close();
-            jsonStr = sb.toString();
-            return jsonStr;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-    private static void eachdata(String filePath) {
-        String ss = readJsonFile(filePath);
-        JSONObject jobj = JSON.parseObject(ss);
-        JSONArray studs = jobj.getJSONArray("RECORDS");//构建JSONArray数组
-            studs.parallelStream().forEach(jsOBjs->{
-                Student student = JSONObject.parseObject(jsOBjs.toString(), Student.class);
-                testCrud(student);
-            });
-
-//        for (int i = 0 ; i < studs.size();i++){
-//            JSONObject key = (JSONObject)studs.get(i);
-//
-//            Student stud = new Student();
-//            stud.setId(key.getLong("id"));
-//            stud.setName(key.getString("name"));
-//            stud.setBirthday(key.getString("birthday"));
-//            stud.setAddr(key.getString("addr"));
-//            stud.setHiredate( key.getIntValue("hiredate"));
-//            stud.setSalary(key.getIntValue("salary"));
-//            stud.setDeptno(key.getIntValue("deptno"));
-////            System.out.printf("stud:"+ stud);
-////            testInset(stud);
-//            testCrud(stud);
-//        }
-    }
+ 
 
     public static Student jsonObjToString(JSONObject obj) {
         return JSONObject.parseObject(obj.toString(),Student.class);
