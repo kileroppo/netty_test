@@ -5,6 +5,7 @@ import com.example.demo0713.zpgateway.filter.HttpReqFilterImpl;
 import com.example.demo0713.zpgateway.filter.HttpRequestFilter;
 import com.example.demo0713.zpgateway.filter.HttpResponseFilter;
 import com.example.demo0713.zpgateway.router.HttpRouterImpl;
+import com.example.demo0713.zpgateway.router.HttppointRouter;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -20,7 +21,11 @@ import org.apache.http.concurrent.FutureCallback;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
 import org.apache.http.impl.nio.reactor.IOReactorConfig;
+import org.apache.http.nio.client.HttpAsyncClient;
 import org.apache.http.util.EntityUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.concurrent.*;
@@ -30,17 +35,30 @@ import static io.netty.handler.codec.http.HttpResponseStatus.NO_CONTENT;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
+@Component
 public class HttpOutboundHandler extends ChannelOutboundHandlerAdapter {
 
 
     private ExecutorService executorService;
-    // 后端调整地址
-    private List<String> backendUrls;
 
     CloseableHttpAsyncClient httpClient;
 
-    // router
-    HttpRouterImpl router =  new HttpRouterImpl();
+    // 后端调整地址
+//    private List<String> backendUrls;
+
+    @Value("${gateway.server}")
+    private List<String> backendUrls;
+
+
+    @Autowired
+    NamedThreadFactory namedThreadFactory;
+
+    @Autowired
+    HttpRouterImpl router;
+
+    @Autowired
+    ThreadPoolExecutor threadPoolExecutor;
+
     // 过滤器
     HttpResponseFilter filter = new HeaderHttpResponseFilter();
 
@@ -49,45 +67,35 @@ public class HttpOutboundHandler extends ChannelOutboundHandlerAdapter {
 
 
      public  HttpOutboundHandler(List<String> backends){
+
             this.backendUrls = backends.parallelStream().map(this::formateUrl)
                     .collect(Collectors.toList());
+             // 设置线程池
+             setThreadPool();
 
-         executorService = new ThreadPoolExecutor(cores, cores * 2, 1000, TimeUnit.MILLISECONDS
-                    , new ArrayBlockingQueue<>(queueSize) ,new NamedThreadFactory("proxyService")
-                    , new ThreadPoolExecutor.CallerRunsPolicy());
-         // IO连接配置
-         IOReactorConfig ioConfig = IOReactorConfig.custom()
-                 .setConnectTimeout(1000)
-                 .setSoTimeout(1000)
-                 .setIoThreadCount(cores)
-                 .setRcvBufSize(32 * 1024)
-                 .build();
+             // 设置httpclient
+              setHttpClient();
 
-         httpClient = HttpAsyncClients.custom().setMaxConnTotal(40)
-                 .setMaxConnPerRoute(8)
-                 .setDefaultIOReactorConfig(ioConfig)
-                 .setKeepAliveStrategy((response,context) -> 6000)
-                 .build();
-         httpClient.start();
+             httpClient.start();
     }
 
-    private String formateUrl(String backend) {
-         return  backend.endsWith("/")? backend.substring(0, backend.length() - 1):backend;
-    }
+
 
     // 处理方法
     public void handle(final FullHttpRequest fullReq, final ChannelHandlerContext ctx,
                        final HttpRequestFilter filter){
         try {
             // 路由url
-            String routerUrl = this.router.router(backendUrls);
+            String routerUrl = router.router(backendUrls);
             String realUrl = routerUrl + fullReq.uri();
             // 过滤器  在header中添加字段
             filter.reqFilter(fullReq, ctx);
+
             // 往线程池提交任务
             Future<?> submit = executorService.submit(() -> fetchGet(fullReq, ctx, realUrl));
             // 获取结果
             Object reqRes = submit.get(2000, TimeUnit.MILLISECONDS);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -147,6 +155,39 @@ public class HttpOutboundHandler extends ChannelOutboundHandlerAdapter {
             //ctx.close();
         }
 
+    }
+
+
+    // io config
+    public IOReactorConfig getIoConfig(){
+        IOReactorConfig ioConfig = IOReactorConfig.custom()
+                .setConnectTimeout(1000)
+                .setSoTimeout(1000)
+                .setIoThreadCount(cores)
+                .setRcvBufSize(32 * 1024)
+                .build();
+        return ioConfig;
+    }
+    // thread config
+    public  ExecutorService setThreadPool(){
+        executorService = new ThreadPoolExecutor(cores, cores * 2, 1000, TimeUnit.MILLISECONDS
+                , new ArrayBlockingQueue<>(queueSize) ,namedThreadFactory
+                , new ThreadPoolExecutor.CallerRunsPolicy());
+//        threadPoolExecutor.
+        return executorService;
+    }
+    // http config
+    public HttpAsyncClient setHttpClient(){
+        httpClient = HttpAsyncClients.custom().setMaxConnTotal(40)
+                .setMaxConnPerRoute(8)
+                .setDefaultIOReactorConfig(getIoConfig())
+                .setKeepAliveStrategy((response,context) -> 6000)
+                .build();
+        return httpClient;
+    }
+    // foreach url
+    private String formateUrl(String backend) {
+        return  backend.endsWith("/")? backend.substring(0, backend.length() - 1):backend;
     }
 
 }
