@@ -1,8 +1,11 @@
 package com.example.demo0713.zpgateway.outbound;
 
+import org.springframework.stereotype.Component;
+
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
+@Component
 public class NamedThreadFactory implements ThreadFactory {
 
     // thread 线程组

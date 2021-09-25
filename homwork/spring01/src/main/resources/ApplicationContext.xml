@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                        http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+                        http://www.springframework.org/schema/context
+                        http://www.springframework.org/schema/context/spring-context-3.2.xsd http://www.springframework.org/schema/aop https://www.springframework.org/schema/aop/spring-aop.xsd">
+
+
+    <!--bean 注入-->
+    <bean id="bean_chendecai" class="com.example.spring01.Person">
+        <property name="name" value="cdc"/>
+        <property name="age" value="26"/>
+        <property name="sex" value="1" />
+    </bean>
+
+    <bean id="bean_zhuxiaohua" class="com.example.spring01.Person">
+        <property name="name" value="cdcwife"/>
+        <property name="age" value="24"/>
+        <property name="sex" value="0" />
+    </bean>
+
+    <bean id="bean_chenxiufen" class="com.example.spring01.Person">
+        <property name="name" value="cdxmm"/>
+        <property name="age" value="18"/>
+        <property name="sex" value="0" />
+    </bean>
+
+    <bean id="home" class="com.example.spring01.Home">
+        <property name="persons">
+            <list>
+                <ref bean="bean_chendecai"/>
+                <ref bean="bean_zhuxiaohua"/>
+                <ref bean="bean_chenxiufen"/>
+            </list>
+        </property>
+    </bean>
+
+    <!--包扫描-->
+    <context:component-scan base-package="com.example"/>
+
+    <!--配置aop类-->
+    <bean id="aop1" class="com.example.spring01.aop.Aop1"/>
+    <bean id="aop2" class="com.example.spring01.aop.Aop2" />
+
+    <!--告诉java 用cglib代理-->
+    <aop:aspectj-autoproxy/>
+<!--    <aop:aspectj-autoproxy proxy-target-class="true" />-->
+
+    <!--配置切面-->
+    <aop:config>
+        <aop:pointcut  expression="execution(* com.example.spring01..*.*(..))" id="printPoint" />
+        <aop:aspect ref="aop1"> <!--引用aop的类-->
+            <aop:around method="aroundNotify" pointcut-ref="printPoint"/>
+
+            <aop:before method="qianzhinotify" pointcut-ref="printPoint"/>
+
+            <aop:after-returning method="houzhinotify" pointcut-ref="printPoint"/>
+        </aop:aspect>
+    </aop:config>
+
+    <bean id="city" class="com.example.spring01.JuWeiHui"/>
+
+
+
+</beans>

@@ -5,22 +5,24 @@ import com.example.demo0713.zpgateway.outbound.HttpOutboundHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.FullHttpRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+@Component
 public class HttpInboundHandler extends ChannelInboundHandlerAdapter {
 
-    private List<String> proxyServers;
-
+    @Autowired
     private HttpOutboundHandler handler;
 
-    HttpReqFilterImpl  htpfilter =  new HttpReqFilterImpl();
+    @Autowired
+    HttpReqFilterImpl  htpfilter ;
 
 
-    public HttpInboundHandler(List<String> proxyServers) {
-        this.proxyServers = proxyServers;
-        this.handler = new HttpOutboundHandler(proxyServers);
-    }
+//    public HttpInboundHandler(List<String> proxyServers) {
+//        this.handler = new HttpOutboundHandler(proxyServers);
+//    }
 
 
     @Override

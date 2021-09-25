@@ -1,8 +1,12 @@
 package com.example.demo0713.zpgateway.router;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import java.util.List;
 import java.util.Random;
 
+@Component
 public class HttpRouterImpl implements  HttppointRouter
 {
     @Override
