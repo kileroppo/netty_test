@@ -19,7 +19,7 @@ public class NettyServerApplication {
     InboundServer inboundServer;
 
     public static void main(String[] args) {
-        SpringApplication.run(NettyServerApplication.class, args);
+//        SpringApplication.run(NettyServerApplication.class, args);
 
         // 1 获取多个真正的后端请求端口地址
 //        InboundServer inboundServer = new InboundServer(Integer.parseInt(proxyPort), proxyServers);

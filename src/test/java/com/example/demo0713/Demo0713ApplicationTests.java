@@ -10,6 +10,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.web.context.support.XmlWebApplicationContext;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
@@ -25,7 +26,12 @@ class Demo0713ApplicationTests implements ApplicationContextAware {
 
     @Test
     public   void test2() {
+        StringBuilder build = new StringBuilder();
         ExecutorService pool = DataRecordHandler.getexecPool();
+        Collections.singletonList("1,2,3,4").parallelStream().forEach(
+                build::append
+        );
+
         pool.execute(new ThreadSub());
     }
 
@@ -37,7 +43,6 @@ class Demo0713ApplicationTests implements ApplicationContextAware {
         for (int i = 0; i < integers.size(); i++){
             conditionDemo.put(integers.get(i));
         }
-
     }
 
     @Override

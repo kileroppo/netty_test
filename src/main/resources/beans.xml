@@ -5,8 +5,43 @@
                         http://www.springframework.org/schema/beans/spring-beans.xsd">
 
 
-    <bean id="someBean" class="com.example.demo0713.SomeBean" />
 
 
+    <bean id="someBean" class="com.example.demo0713.SomeBean" >
+        <property   name="name" value="18"   />
+    </bean>
+
+    <alias  name="someBean"  alias="fisomeBean" />
+
+
+    <!--   常用的属性配置       -->
+    <bean id="Student" class="com.pojo.Student">
+        <!-- 常规属性 -->
+        <property name="stuid" value="3"></property>
+        <property name="stuname" value="李四"></property>
+        <!-- 数组的配置 -->
+        <property name="loves">
+            <list>
+                <value>吃</value>
+                <value>喝</value>
+                <value>玩</value>
+                <value>乐</value>
+            </list>
+        </property>
+        <!-- map集合的配置  -->
+        <property name="others">
+            <map>
+                <entry key="age" value="18"></entry>
+                <entry key="height" value="180"></entry>
+            </map>
+        </property>
+    </bean>
+
+    <bean id="StudentDAO" class="com.dao.StudentDAO"></bean>
+
+    <bean id="StudentService" class="com.service.StudentService">
+        <!-- 属性值关键字  value 和  ref  的区别 -->
+        <property name="studentDAO" ref="StudentDAO"></property>
+    </bean>
 
 </beans>
